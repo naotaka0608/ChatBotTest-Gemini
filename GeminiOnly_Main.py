@@ -104,3 +104,6 @@ async def chat_endpoint(request: ChatRequest):
         generate_response_stream(chat_session, prompt),
         media_type="text/plain" # または "text/event-stream"
     )
+    
+    
+    
