@@ -1,4 +1,5 @@
 import os
+import sys
 import asyncio
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
@@ -6,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Dict
+from typing import Dict, Any
 
 # LlamaIndex RAG Components
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
@@ -17,54 +18,78 @@ from llama_index.core.chat_engine import CondensePlusContextChatEngine
 
 from google import genai
 from google.genai import types
-from dotenv import load_dotenv
 
 import uvicorn
 
-load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY")
+
+# --- 1. 設定の読み込みと環境チェック ---
+class Settings(BaseSettings):
+    """pydantic-settings が .env ファイルを自動で読み込みます。"""
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra='ignore'
+    )
+    GEMINI_API_KEY: str
+
+settings = Settings()
 
 
-# モデル名
-def initialize_rag_components() -> CondensePlusContextChatEngine:
-    """
-    RAGインデックスを構築し、チャットエンジンを返します。
-    """
+
+if not settings.GEMINI_API_KEY:
+    print("FATAL: 'GEMINI_API_KEY' が設定されていません。'.env' ファイルを確認してください。")
+    sys.exit(1)
     
-    # 1. LlamaIndexのグローバル設定
-    Settings.llm = Gemini(
-            model="gemini-2.5-flash",
-            api_key=API_KEY  # 👈 settingsから直接渡す
-        )
-    Settings.embed_model = GeminiEmbedding(
-            model_name="text-embedding-004",
-            api_key=API_KEY  # 👈 settingsから直接渡す
-        )
+    
+# --- 2. RAG エンジンの初期化 ---
+def initialize_rag_components() -> CondensePlusContextChatEngine:
+    """RAGインデックスを構築し、チャットエンジンを返します。"""
 
-    # 2. 知識ベースの構築
+    api_key = settings.GEMINI_API_KEY
+    print(f"DEBUG: API Key Loaded (starts with: {api_key[:5]})")
+    
+    # 2.1. Gemini Clientの初期化と認証チェック
     try:
-        # 'docs'フォルダ内の全ファイルを読み込み
+        # LLM Client/Embedding Model に APIキーを直接渡す
+        llm_client = Gemini(model="gemini-2.5-flash", api_key=api_key)
+        embed_model = GeminiEmbedding(model_name="text-embedding-004", api_key=api_key)
+        
+        print("INFO: Gemini LLM/Embedding Client Initialization Successful.")
+        
+    except Exception as e:
+        print(f"FATAL ERROR: Gemini Clientの初期化に失敗しました。APIキーを確認してください: {e}")
+        sys.exit(1) 
+
+    # 2.2. LlamaIndexのグローバル設定
+    # 🚨 ServiceContextの代わりにSettingsに直接設定します 🚨
+
+    Settings.llm = llm_client
+    Settings.embed_model = embed_model
+    
+
+    # 2.3. 知識ベースの構築
+    try:
         documents = SimpleDirectoryReader("./docs").load_data()
     except Exception as e:
-        print(f"警告: 'docs'フォルダの読み込みに失敗しました。{e}")
+        print(f"WARNING: 'docs'フォルダの読み込みに失敗しました。{e}")
         documents = []
 
     if not documents:
-        print("RAGインデックスの作成をスキップします。")
-        # ドキュメントがない場合は、空のインデックスを作成
-        index = VectorStoreIndex([])
+        print("WARNING: RAGインデックスの作成をスキップします。純粋なGeminiチャットとして動作します。")
+        # Settingsが有効なため、引数なしでインデックスを作成
+        index = VectorStoreIndex([], embed_model=embed_model)
     else:
-        # ベクトルDBを構築（埋め込み生成と保存）
-        index = VectorStoreIndex.from_documents(documents)
-        print(f"RAGインデックス構築完了。ドキュメント数: {len(documents)}")
+        index = VectorStoreIndex.from_documents(
+            documents, 
+            embed_model=embed_model # 👈 embed_model を直接渡す
+        )
+        print(f"INFO: RAGインデックス構築完了。ドキュメント数: {len(documents)}")
 
-    # 3. RAGチャットエンジンの作成
+    # 2.4. RAGチャットエンジンの作成
     chat_engine = CondensePlusContextChatEngine.from_defaults(
         retriever=index.as_retriever(),
-        llm=Settings.llm,
-        system_prompt="あなたは提供された知識ベースに基づいてのみ回答するプロフェッショナルなアシスタントです。知識ベースに情報がない場合は、申し訳ありませんが、その情報はありませんと伝えてください。",
-        # 履歴を管理するためのストレージを設定することもできますが、今回はメモリ内で管理します。
+        llm=llm_client, 
+        system_prompt="あなたは提供された知識ベースに基づいてのみ回答するプロフェッショナルなアシスタントです。知識ベースに情報がない場合は、その旨を丁寧に伝えてください。",
     )
+
     return chat_engine
 
 
