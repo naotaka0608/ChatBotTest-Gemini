@@ -1,0 +1,25 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+google-genai = "*"
+pydantic = "*"
+load-dotenv = "*"
+uvicorn = "*"
+fastapi = "*"
+llama-index = "*"
+llama-index-llms-gemini = "*"
+llama-index-embeddings-gemini = "*"
+pypdf = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"
+python_full_version = "3.12.10"
+
+[scripts]
+start1 = "uvicorn GeminiOnly_Main:app --reload"
+start2 = "uvicorn AddRagToGemini_Main:app --reload"
