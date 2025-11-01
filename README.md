@@ -29,7 +29,7 @@ Google AI Studio で APIキーを取得するには
 ```bash
 $ pip install pipenv
 $ pipenv --python 3
-$ pipenv install fastapi uvicorn google-genai pydantic load_dotenv
+$ pipenv install fastapi uvicorn google-genai pydantic load_dotenv pydantic_settings
 ```
 
 - 仮想環境作成
@@ -67,7 +67,7 @@ pipenv install llama-index llama-index-llms-gemini llama-index-embeddings-gemini
 
 
 ## その他
-いらなくなったpipenvの環境は下記フォルダ内の仮想環境フォルダを削除
+いらなくなったpipenvの環境は下記フォルダ内の仮想環境フォルダを削除（OS:Windows）
 ```bash
 %userprofile%\.virtualenvs
 ```
