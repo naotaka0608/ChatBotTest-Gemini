@@ -5,12 +5,21 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from google import genai
 from google.genai import types
+from dotenv import load_dotenv
+
+
+# ----------------------------------------------------
+# 1. .envファイルをロード
+# ----------------------------------------------------
+# これにより、.envファイル内のキーが os.environ に読み込まれます
+load_dotenv()
 
 # 🚨 注意: 本番環境では環境変数を使用してください
 # os.environ["GEMINI_API_KEY"] が設定されている前提
 # client = genai.Client()
 # テストのため、直接キーを指定する（非推奨）
-API_KEY = "ここに取得したAPIキーを入力"  # <<< ここにご自身のAPIキーを貼り付けてください
+#API_KEY = "ここに取得したAPIキーを入力"  # <<< ここにご自身のAPIキーを貼り付けてください
+API_KEY = os.getenv("GEMINI_API_KEY")
 
 try:
 

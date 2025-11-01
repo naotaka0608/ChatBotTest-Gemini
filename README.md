@@ -21,13 +21,19 @@ Google AI Studio で APIキーを取得するには
 
 ## 下記pipコマンドでインストール
 ```bash
-$ pip install fastapi uvicorn google-genai pydantic
+$ pip install fastapi uvicorn google-genai pydantic load_dotenv
 ```
 又は
 ```bash
 $ pip install -r requirements.txt
 ```
 
+
+## .envファイル
+.envファイルを作成して、GeminiのAPIキーを入力
+```txt
+GEMINI_API_KEY="ここに取得したAPIキーを貼り付け"
+```
 
 ## 実行
 サーバーの実行  
