@@ -47,14 +47,12 @@ start2 = "uvicorn AddRagToGemini_Main:app --reload"
 GEMINI_API_KEY="ここに取得したAPIキーを貼り付け"
 ```
 
-・サーバーの実行 
+## サーバーの実行 
 ```bash
 $ pipenv run start1
 ```
 
-
-
-GeminiOnly_HP.htmlを直接開く
+- public/index.htmlを直接開く
 
 
 
