@@ -21,15 +21,7 @@ from dotenv import load_dotenv
 import uvicorn
 
 load_dotenv()
-
 API_KEY = os.getenv("GEMINI_API_KEY")
-
-try:
-
-    client = genai.Client(api_key=API_KEY) # 環境変数から読み込む
-    
-except Exception as e:
-    raise RuntimeError(f"Gemini Clientの初期化に失敗: {e}")
 
 
 # モデル名
